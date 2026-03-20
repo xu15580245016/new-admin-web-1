@@ -9,6 +9,8 @@ const NewsRouter = require('./routes/admin/NewsRouter');
 const WebNewsRouter = require('./routes/web/NewsRouter');
 const WebProductRouter = require('./routes/web/ProductRouter');
 const ProductRouter = require('./routes/admin/ProductRouter');
+const WebCommentRouter = require('./routes/web/CommentRouter');
+const AdminCommentRouter = require('./routes/admin/CommentRouter');
 
 var app = express();
 
@@ -31,6 +33,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 */
 app.use(WebNewsRouter)
 app.use(WebProductRouter)
+app.use(WebCommentRouter)
 app.use((req, res, next) => {
   // 如果token有效，next()
   // 如果token过期了，返回401错误
@@ -40,14 +43,28 @@ app.use((req, res, next) => {
     return;
   }
 
-  const token = req.headers['authorization'].split(" ")[1]
+  // webapi/comment/list 不需要token验证
+  if (req.url.startsWith('/webapi/comment/list')) {
+    next()
+    return;
+  }
+
+  const authHeader = req.headers['authorization']
+  if (!authHeader) {
+    res.status(401).send({ errorCode: "-1", errorInfo: "未提供token" })
+    return
+  }
+
+  const token = authHeader.split(" ")[1]
   if (token) {
     // console.log("我来啦");
     let payload = JWT.verify(token)
     if (payload) {
+      req.user = payload
       const newToken = JWT.generate({
         _id: payload._id,
-        username: payload.username
+        username: payload.username,
+        role: payload.role
       }, "1d")
       res.header('Authorization', newToken)
       next()
@@ -60,6 +77,7 @@ app.use((req, res, next) => {
 app.use(UserRouter)
 app.use(NewsRouter)
 app.use(ProductRouter)
+app.use(AdminCommentRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
