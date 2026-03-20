@@ -8,7 +8,9 @@ const JWT = require('./util/JWT');
 const NewsRouter = require('./routes/admin/NewsRouter');
 const WebNewsRouter = require('./routes/web/NewsRouter');
 const WebProductRouter = require('./routes/web/ProductRouter');
+const WebCommentRouter = require('./routes/web/CommentRouter');
 const ProductRouter = require('./routes/admin/ProductRouter');
+const CommentRouter = require('./routes/admin/CommentRouter');
 
 var app = express();
 
@@ -31,20 +33,28 @@ app.use(express.static(path.join(__dirname, 'public')));
 */
 app.use(WebNewsRouter)
 app.use(WebProductRouter)
+app.use(WebCommentRouter)
 app.use((req, res, next) => {
-  // 如果token有效，next()
-  // 如果token过期了，返回401错误
+  // token验证中间件 - 只解析token，不强制拦截（webapi的权限由控制器自己判断）
   console.log(req.url);
+  
+  // adminapi的登录接口跳过验证
   if (req.url === '/adminapi/user/login') {
     next()
-    return;
+    return
   }
-
-  const token = req.headers['authorization'].split(" ")[1]
+  
+  // 从header中获取token
+  const authHeader = req.headers['authorization']
+  const token = authHeader ? authHeader.split(" ")[1] : null
+  
   if (token) {
-    // console.log("我来啦");
     let payload = JWT.verify(token)
     if (payload) {
+      // token有效，将用户信息挂载到req.user上
+      req.user = payload
+      
+      // 刷新token
       const newToken = JWT.generate({
         _id: payload._id,
         username: payload.username
@@ -52,7 +62,21 @@ app.use((req, res, next) => {
       res.header('Authorization', newToken)
       next()
     } else {
-      res.status(401).send({ errorCode: "-1", errorInfo: "token过期" })
+      // token过期 - 如果是adminapi接口直接返回，webapi接口继续
+      if (req.url.startsWith('/adminapi/')) {
+        res.status(401).send({ errorCode: "-1", errorInfo: "token过期" })
+      } else {
+        // webapi接口继续执行，由控制器判断是否需要登录
+        next()
+      }
+    }
+  } else {
+    // 没有token - 如果是adminapi接口直接返回，webapi接口继续
+    if (req.url.startsWith('/adminapi/')) {
+      res.status(401).send({ errorCode: "-1", errorInfo: "未提供认证信息" })
+    } else {
+      // webapi接口继续执行，由控制器判断是否需要登录
+      next()
     }
   }
 })
@@ -60,6 +84,7 @@ app.use((req, res, next) => {
 app.use(UserRouter)
 app.use(NewsRouter)
 app.use(ProductRouter)
+app.use(CommentRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
