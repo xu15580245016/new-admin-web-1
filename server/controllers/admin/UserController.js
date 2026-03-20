@@ -15,7 +15,8 @@ const UserController = {
             const token = JWT.generate({
                 _id: result[0]._id,
                 username: result[0].username,
-
+                role: result[0].role,
+                avatar: result[0].avatar || ''
             }, '1d')
             res.header("Authorization", token)
             res.send({
