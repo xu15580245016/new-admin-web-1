@@ -8,7 +8,9 @@ const JWT = require('./util/JWT');
 const NewsRouter = require('./routes/admin/NewsRouter');
 const WebNewsRouter = require('./routes/web/NewsRouter');
 const WebProductRouter = require('./routes/web/ProductRouter');
+const WebCommentRouter = require('./routes/web/CommentRouter');
 const ProductRouter = require('./routes/admin/ProductRouter');
+const AdminCommentRouter = require('./routes/admin/CommentRouter');
 
 var app = express();
 
@@ -31,18 +33,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 */
 app.use(WebNewsRouter)
 app.use(WebProductRouter)
+app.use(WebCommentRouter)
 app.use((req, res, next) => {
   // 如果token有效，next()
   // 如果token过期了，返回401错误
   console.log(req.url);
-  if (req.url === '/adminapi/user/login') {
+  // 白名单：不需要token的接口
+  const whiteList = ['/adminapi/user/login']
+  if (whiteList.includes(req.url)) {
     next()
     return;
   }
 
-  const token = req.headers['authorization'].split(" ")[1]
+  // 处理authorization header不存在的情况
+  const authHeader = req.headers['authorization']
+  if (!authHeader) {
+    return res.status(401).send({ errorCode: "-1", errorInfo: "未登录，请先登录" })
+  }
+  
+  const token = authHeader.split(" ")[1]
   if (token) {
-    // console.log("我来啦");
     let payload = JWT.verify(token)
     if (payload) {
       const newToken = JWT.generate({
@@ -54,12 +64,15 @@ app.use((req, res, next) => {
     } else {
       res.status(401).send({ errorCode: "-1", errorInfo: "token过期" })
     }
+  } else {
+    res.status(401).send({ errorCode: "-1", errorInfo: "未登录，请先登录" })
   }
 })
 
 app.use(UserRouter)
 app.use(NewsRouter)
 app.use(ProductRouter)
+app.use(AdminCommentRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
