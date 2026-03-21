@@ -17,22 +17,25 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import axios from 'axios'
-import { loadFull } from "tsparticles";
+import { loadFull } from "tsparticles"
+import type { Engine, ISourceOptions } from "tsparticles-engine"
 import { useRouter } from 'vue-router'
+import type { FormInstance, FormRules } from 'element-plus'
 import { userInfoStore } from '../../store/userInfo'
-import { useMenuStore } from '../../store/menu';
+import { useMenuStore } from '../../store/menu'
 
 const useMenu = useMenuStore()
 const router = useRouter()
 const userInfo = userInfoStore()
-const particlesInit = async engine => {
-    await loadFull(engine);
-};
-// 背景设置
-const options = {
+
+const particlesInit = async (engine: Engine): Promise<void> => {
+    await loadFull(engine)
+}
+
+const options: ISourceOptions = {
     background: {
         color: {
             value: '#0d47a1'
@@ -111,42 +114,55 @@ const options = {
     detectRetina: true
 }
 
-// 表单内容
-const ruleForm = reactive({
+interface LoginForm {
+    username: string
+    password: string
+}
+
+interface LoginResponse {
+    ActionType: string
+    data: {
+        _id: string
+        username: string
+        avatar?: string
+        role: number
+        gender?: number
+        introduction?: string
+    }
+    error?: string
+}
+
+const ruleForm = reactive<LoginForm>({
     username: '',
     password: ''
 })
-const ruleFormRef = ref
-// 密码验证规则
-const validatePwd = (rule, value, callback) => {
+
+const ruleFormRef = ref<FormInstance>()
+
+const validatePwd = (rule: any, value: string, callback: (error?: Error) => void): void => {
     if (!value) {
         return callback(new Error('请输入密码'))
     } else {
         callback()
     }
 }
-const rules = reactive({
+
+const rules = reactive<FormRules<LoginForm>>({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [{ required: true, validator: validatePwd, trigger: 'blur' }],
 })
-// 提交登录的表单验证
-const login = (formEl) => {
+
+const login = async (formEl: FormInstance | undefined): Promise<void> => {
     if (!formEl) return
-    formEl.validate((valid) => {
+    await formEl.validate((valid) => {
         if (valid) {
-            // console.log('submit!')
-            axios.post('/adminapi/user/login', ruleForm).then(res => {
-                // console.log(res.data);
-                // 登陆成功的处理
+            axios.post<LoginResponse>('/adminapi/user/login', ruleForm).then(res => {
                 if (res.data.ActionType === 'OK') {
-                    // console.log(res.data.data);
                     userInfo.changeUserInfo(res.data.data)
-                    // console.log(useMenu.isGetterRouter);
                     useMenu.changeGetterRouter(false)
                     router.push('/home')
                 } else {
-                    // 登录失败的处理
-                    ElMessage.error(res.data.error)
+                    ElMessage.error(res.data.error || '登录失败')
                 }
             })
         } else {
@@ -156,6 +172,7 @@ const login = (formEl) => {
     })
 }
 </script>
+
 <style lang="scss">
 .login {
     position: relative;
@@ -165,7 +182,6 @@ const login = (formEl) => {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, .3);
-    // filter: blur(10px);
 
     h2 {
         padding: 10px 0;
@@ -174,10 +190,6 @@ const login = (formEl) => {
     }
 
     .el-form {
-        // position: absolute;
-        // filter: blur(10px);
-
-
         .el-form-item {
             margin: 50px 20px;
         }
