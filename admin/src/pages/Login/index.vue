@@ -17,20 +17,30 @@
     </div>
 </template>
 
-<script setup>
-import { reactive, ref } from 'vue'
-import axios from 'axios'
+<script setup lang="ts">
+import { reactive, ref, type Ref } from 'vue'
+import { ElForm, ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { loadFull } from "tsparticles";
 import { useRouter } from 'vue-router'
 import { userInfoStore } from '../../store/userInfo'
 import { useMenuStore } from '../../store/menu';
+import { login as loginApi, type LoginData } from '../../api/user'
 
 const useMenu = useMenuStore()
 const router = useRouter()
 const userInfo = userInfoStore()
-const particlesInit = async engine => {
+
+interface LoginForm {
+    username: string
+    password: string
+}
+
+const ruleFormRef = ref<FormInstance | null>(null)
+
+const particlesInit = async (engine: any) => {
     await loadFull(engine);
 };
+
 // 背景设置
 const options = {
     background: {
@@ -112,48 +122,44 @@ const options = {
 }
 
 // 表单内容
-const ruleForm = reactive({
+const ruleForm = reactive<LoginForm>({
     username: '',
     password: ''
 })
-const ruleFormRef = ref
+
 // 密码验证规则
-const validatePwd = (rule, value, callback) => {
+const validatePwd = (rule: any, value: string, callback: (error?: Error) => void) => {
     if (!value) {
         return callback(new Error('请输入密码'))
     } else {
         callback()
     }
 }
-const rules = reactive({
+
+const rules = reactive<FormRules<LoginForm>>({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [{ required: true, validator: validatePwd, trigger: 'blur' }],
 })
+
 // 提交登录的表单验证
-const login = (formEl) => {
+const login = async (formEl: FormInstance | null | undefined) => {
     if (!formEl) return
-    formEl.validate((valid) => {
+    try {
+        const valid = await formEl.validate()
         if (valid) {
-            // console.log('submit!')
-            axios.post('/adminapi/user/login', ruleForm).then(res => {
-                // console.log(res.data);
-                // 登陆成功的处理
-                if (res.data.ActionType === 'OK') {
-                    // console.log(res.data.data);
-                    userInfo.changeUserInfo(res.data.data)
-                    // console.log(useMenu.isGetterRouter);
-                    useMenu.changeGetterRouter(false)
-                    router.push('/home')
-                } else {
-                    // 登录失败的处理
-                    ElMessage.error(res.data.error)
-                }
-            })
-        } else {
-            console.log('error submit!')
-            return false
+            const res = await loginApi(ruleForm as LoginData)
+            if (res.data.ActionType === 'OK') {
+                userInfo.changeUserInfo(res.data.data)
+                useMenu.changeGetterRouter(false)
+                router.push('/home')
+            } else {
+                ElMessage.error(res.data.error || '登录失败')
+            }
         }
-    })
+    } catch (error) {
+        console.log('error submit!')
+        return false
+    }
 }
 </script>
 <style lang="scss">
@@ -165,7 +171,6 @@ const login = (formEl) => {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, .3);
-    // filter: blur(10px);
 
     h2 {
         padding: 10px 0;
@@ -174,10 +179,6 @@ const login = (formEl) => {
     }
 
     .el-form {
-        // position: absolute;
-        // filter: blur(10px);
-
-
         .el-form-item {
             margin: 50px 20px;
         }

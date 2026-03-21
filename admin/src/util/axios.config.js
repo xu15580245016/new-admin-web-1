@@ -1,7 +1,13 @@
 import axios from 'axios'
 
+// 创建axios实例
+const service = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000
+})
+
 // 添加请求拦截器
-axios.interceptors.request.use(function (config) {
+service.interceptors.request.use(function (config) {
     // 在发送请求之前做些什么
     const token = localStorage.getItem("token")
     config.headers.Authorization = `Bearer ${token}`
@@ -12,14 +18,13 @@ axios.interceptors.request.use(function (config) {
 });
 
 // 添加响应拦截器
-axios.interceptors.response.use(function (response) {
+service.interceptors.response.use(function (response) {
     // 对响应数据做点什么
     const { authorization } = response.headers
     authorization && localStorage.setItem('token', authorization)
     return response;
 }, function (error) {
     // 对响应错误做点什么
-    // console.log("我来啦");
     const { status } = error.response
     if (status === 401) {
         localStorage.removeItem('token')
@@ -27,3 +32,5 @@ axios.interceptors.response.use(function (response) {
     }
     return Promise.reject(error);
 });
+
+export default service
