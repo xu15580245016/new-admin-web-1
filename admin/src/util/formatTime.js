@@ -1,11 +1,11 @@
-import moment from 'moment'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
 
-moment.locale('zh-cn')
-
+dayjs.locale('zh-cn')
 
 const formatTime = {
-    getTime: (date) => {
-        return moment(date).format('YYYY/MM/DD');
+    getTime: (date: string | Date) => {
+        return dayjs(date).format('YYYY/MM/DD')
     }
 }
 
