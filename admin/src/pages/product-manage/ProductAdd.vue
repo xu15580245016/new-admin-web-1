@@ -23,11 +23,11 @@
 </template>
 
 <script setup>
-
-import { reactive, ref, toRefs } from 'vue'
+import { reactive, ref } from 'vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import upload from '../../util/upload';
 import { useRouter } from 'vue-router'
+import { addProduct } from '../../api/product'
+
 const productFormRef = ref()
 const productForm = reactive({
     title: '',
@@ -51,30 +51,26 @@ const productFormRules = reactive({
     introduction: [
         { required: true, message: '请输入简要描述', trigger: 'blur' },
     ]
-
 })
 
 const handleChange = file => {
-    // 函数体
     productForm.cover = URL.createObjectURL(file)
     productForm.file = file
 }
+
 const router = useRouter()
 const submitForm = () => {
-    // 函数体
     productFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            // console.log(productForm);
-            await upload("/adminapi/product/add", productForm)
+            await addProduct(productForm)
             router.push('/product-manage/productlist')
         }
     })
 }
-</script>-->
+</script>
 
 <style lang="scss" scoped>
 .el-form {
     margin-top: 30px;
 }
-</style>  
+</style>

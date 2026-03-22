@@ -24,22 +24,23 @@
 </template>
 
 <script setup>
-import axios from 'axios';
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import Editor from '../../components/editor/Editor.vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import upload from '../../util/upload';
+import { getNewsDetail, updateNews } from '../../api/news'
+
 const newsrFormRef = ref()
 const router = useRouter()
 const route = useRoute()
 const newsForm = reactive({
     title: '',
     content: '',
-    category: 1,// 1最新动态，2 典型案情 3  通知公告
+    category: 1,
     cover: '',
     file: null,
-    isPublish: 0 //0未发布，1已发布
+    isPublish: 0,
+    _id: ''
 })
 const newsFormRules = {
     title: [
@@ -62,43 +63,31 @@ const options = [
     { label: '通知公告', value: 3 },
 ]
 
-// 每次editor内容改变的回调
 const handleChange = (data) => {
-    // 函数体
     newsForm.content = data
 }
 
-
 const handleAvatar = (file) => {
-    // 函数体
     newsForm.cover = URL.createObjectURL(file)
     newsForm.file = file
 }
 
-
 const submitForm = () => {
-    // 函数体
     newsrFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            // console.log(newsForm);
-            // 后台
-            await upload('/adminapi/news/list', newsForm)
+            await updateNews(newsForm)
             router.back()
         }
     })
 }
 
 const handleBack = () => {
-    // 函数体
     router.back()
 }
 
 onMounted(async () => {
-    // 函数体
-    const res = await axios.get(`/adminapi/news/list/${route.params.id}`)
-    // console.log(res.data);
-    Object.assign(newsForm, res.data.data[0])
+    const res = await getNewsDetail(route.params.id)
+    Object.assign(newsForm, res.data[0])
 })
 </script>
 

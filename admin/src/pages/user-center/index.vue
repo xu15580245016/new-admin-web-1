@@ -42,13 +42,12 @@
     </el-row>
 </template>
 
-<script  setup>
-import { reactive, ref, toRefs } from 'vue'
+<script setup>
+import { reactive, ref, computed } from 'vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import { computed } from 'vue';
 import { userInfoStore } from '../../store/userInfo';
-import { Plus } from '@element-plus/icons-vue'
-import upload from '../../util/upload';
+import { uploadUserInfo } from '../../api/user';
+
 const userStore = userInfoStore()
 const avatarUrl = computed(() => userStore.userInfo.avatar ? 'http://localhost:3000' + userStore.userInfo.avatar : `https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png`)
 
@@ -58,9 +57,9 @@ const userForm = reactive({
     gender: userStore.userInfo.gender,
     introduction: userStore.userInfo.introduction,
     avatar: userStore.userInfo.avatar,
-    file: null//
+    file: null
 })
-// 性别选项
+
 const options = [
     { label: '保密', value: 0 },
     { label: '男', value: 1 },
@@ -83,27 +82,19 @@ const userFormRules = reactive({
     ],
 })
 
-// 每次选择完图片之后的回调
 const handleChange = (file) => {
-    // console.log(file);
     userForm.avatar = URL.createObjectURL(file)
     userForm.file = file
 }
 
-// 更新提交
 const submitForm = () => {
-    // 函数体
     userFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            // console.log('submit', userForm);
-            const result = await upload('adminapi/user/upload', userForm)
-            // console.log(res.data);
+            const result = await uploadUserInfo(userForm)
             if (result.ActionType === 'OK') {
                 userStore.changeUserInfo(result.data)
                 ElMessage.success("更新成功")
             }
-
         }
     })
 }

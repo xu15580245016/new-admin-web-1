@@ -2,7 +2,6 @@
 <template>
     <el-menu :collapse="menuStore.iscollapse" :collapse-transition="false" :router="true" :default-active="route.fullPath">
         <el-menu-item index="/main">
-            <!-- <el-icon><icon-menu /></el-icon> -->
             <el-icon>
                 <HomeFilled />
             </el-icon>
@@ -28,7 +27,7 @@
                 用户列表
             </el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="/news-mangae">
+        <el-sub-menu index="/news-manage">
             <template #title>
                 <el-icon>
                     <MessageBox />
@@ -60,25 +59,22 @@
 </template>
 
 <script setup>
-import { reactive, ref, toRefs } from 'vue'
-import { HomeFilled, User, UserFilled, MessageBox, FolderOpened } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
+import { HomeFilled, User, UserFilled, MessageBox, FolderOpened } from '@element-plus/icons-vue'
 import { useMenuStore } from '../../store/menu'
 import { userInfoStore } from '../../store/userInfo'
+
 const route = useRoute()
-// console.log(route);
 const userInfo = userInfoStore()
 const menuStore = useMenuStore()
 
 const vAdmin = {
     mounted(el) {
-        // console.log(el);
         if (userInfo.userInfo.role !== 1) {
             el.parentNode.removeChild(el)
         }
     }
 }
-
 </script>
 
 <style scoped>

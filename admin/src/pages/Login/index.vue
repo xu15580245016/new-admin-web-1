@@ -11,27 +11,36 @@
                 <el-input v-model="ruleForm.password" type="password" autocomplete="off" />
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="login(ruleFormRef)">登录</el-button>
+                <el-button type="primary" @click="login(ruleFormRef!)">登录</el-button>
             </el-form-item>
         </el-form>
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
-import axios from 'axios'
-import { loadFull } from "tsparticles";
+import { loadFull } from "tsparticles"
 import { useRouter } from 'vue-router'
+import { FormInstance, FormRules } from 'element-plus'
 import { userInfoStore } from '../../store/userInfo'
-import { useMenuStore } from '../../store/menu';
+import { useMenuStore } from '../../store/menu'
+import { login as loginApi } from '../../api/user'
+import type { LoginFormData } from '../../api/types'
+
+interface RuleForm {
+    username: string
+    password: string
+}
 
 const useMenu = useMenuStore()
 const router = useRouter()
 const userInfo = userInfoStore()
-const particlesInit = async engine => {
-    await loadFull(engine);
-};
-// 背景设置
+const ruleFormRef = ref<FormInstance>()
+
+const particlesInit = async (engine: any) => {
+    await loadFull(engine)
+}
+
 const options = {
     background: {
         color: {
@@ -111,44 +120,36 @@ const options = {
     detectRetina: true
 }
 
-// 表单内容
-const ruleForm = reactive({
+const ruleForm = reactive<RuleForm>({
     username: '',
     password: ''
 })
-const ruleFormRef = ref
-// 密码验证规则
-const validatePwd = (rule, value, callback) => {
+
+const validatePwd = (rule: any, value: string, callback: (error?: Error) => void) => {
     if (!value) {
         return callback(new Error('请输入密码'))
     } else {
         callback()
     }
 }
-const rules = reactive({
+
+const rules = reactive<FormRules<RuleForm>>({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [{ required: true, validator: validatePwd, trigger: 'blur' }],
 })
-// 提交登录的表单验证
-const login = (formEl) => {
+
+const login = async (formEl: FormInstance) => {
     if (!formEl) return
-    formEl.validate((valid) => {
+    await formEl.validate(async (valid) => {
         if (valid) {
-            // console.log('submit!')
-            axios.post('/adminapi/user/login', ruleForm).then(res => {
-                // console.log(res.data);
-                // 登陆成功的处理
-                if (res.data.ActionType === 'OK') {
-                    // console.log(res.data.data);
-                    userInfo.changeUserInfo(res.data.data)
-                    // console.log(useMenu.isGetterRouter);
-                    useMenu.changeGetterRouter(false)
-                    router.push('/home')
-                } else {
-                    // 登录失败的处理
-                    ElMessage.error(res.data.error)
-                }
-            })
+            const res = await loginApi(ruleForm as LoginFormData)
+            if (res.ActionType === 'OK') {
+                userInfo.changeUserInfo(res.data)
+                useMenu.changeGetterRouter(false)
+                router.push('/home')
+            } else {
+                ElMessage.error(res.error || '登录失败')
+            }
         } else {
             console.log('error submit!')
             return false
@@ -156,6 +157,7 @@ const login = (formEl) => {
     })
 }
 </script>
+
 <style lang="scss">
 .login {
     position: relative;
@@ -165,7 +167,6 @@ const login = (formEl) => {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, .3);
-    // filter: blur(10px);
 
     h2 {
         padding: 10px 0;
@@ -174,10 +175,6 @@ const login = (formEl) => {
     }
 
     .el-form {
-        // position: absolute;
-        // filter: blur(10px);
-
-
         .el-form-item {
             margin: 50px 20px;
         }

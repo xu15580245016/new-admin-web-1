@@ -24,19 +24,20 @@
 </template>
 
 <script setup>
-import { reactive, ref, toRefs } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router';
 import Editor from '../../components/editor/Editor.vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import upload from '../../util/upload';
+import { addNews } from '../../api/news'
+
 const newsrFormRef = ref()
 const newsForm = reactive({
     title: '',
     content: '',
-    category: 1,// 1最新动态，2 典型案情 3  通知公告
+    category: 1,
     cover: '',
     file: null,
-    isPublish: 0 //0未发布，1已发布
+    isPublish: 0
 })
 const newsFormRules = {
     title: [
@@ -59,33 +60,24 @@ const options = [
     { label: '通知公告', value: 3 },
 ]
 
-// 每次editor内容改变的回调
 const handleChange = (data) => {
-    // 函数体
     newsForm.content = data
 }
 
-
 const handleAvatar = (file) => {
-    // 函数体
     newsForm.cover = URL.createObjectURL(file)
     newsForm.file = file
 }
 
 const router = useRouter()
 const submitForm = () => {
-    // 函数体
     newsrFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            console.log(newsForm);
-            // 后台
-            await upload('/adminapi/news/add', newsForm)
+            await addNews(newsForm)
             router.push('/news-manage/newslist')
         }
     })
 }
-
 </script>
 
 <style scoped lang="scss">

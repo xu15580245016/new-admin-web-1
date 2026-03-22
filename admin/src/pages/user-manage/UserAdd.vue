@@ -28,17 +28,17 @@
 </template>
 
 <script setup>
-
-import { reactive, ref, toRefs } from 'vue'
+import { reactive, ref } from 'vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import upload from '../../util/upload';
 import { useRouter } from 'vue-router'
+import { addUser } from '../../api/user'
+
 const userFormRef = ref()
 const userForm = reactive({
     username: '',
     password: '',
-    gender: 0,//保密
-    role: 2,//1是管理员，2编辑
+    gender: 0,
+    role: 2,
     introduction: '',
     avatar: '',
     file: null
@@ -70,26 +70,23 @@ const userFormRules = reactive({
 })
 
 const handleChange = file => {
-    // 函数体
     userForm.avatar = URL.createObjectURL(file)
     userForm.file = file
 }
+
 const router = useRouter()
 const submitForm = () => {
-    // 函数体
     userFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            console.log(userForm);
-            await upload("/adminapi/user/add", userForm)
+            await addUser(userForm)
             router.push('/user-manage/userlist')
         }
     })
 }
-</script>-->
+</script>
 
 <style lang="scss" scoped>
 .el-form {
     margin-top: 30px;
 }
-</style>  
+</style>
