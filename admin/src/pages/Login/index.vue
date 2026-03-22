@@ -17,20 +17,23 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
-import axios from 'axios'
-import { loadFull } from "tsparticles";
+import { loadFull, type Engine } from "tsparticles";
 import { useRouter } from 'vue-router'
 import { userInfoStore } from '../../store/userInfo'
 import { useMenuStore } from '../../store/menu';
+import { login as loginApi, type LoginData } from '../../api'
+import type { FormInstance, FormRules } from 'element-plus'
 
 const useMenu = useMenuStore()
 const router = useRouter()
 const userInfo = userInfoStore()
-const particlesInit = async engine => {
+
+const particlesInit = async (engine: Engine) => {
     await loadFull(engine);
 };
+
 // 背景设置
 const options = {
     background: {
@@ -109,46 +112,45 @@ const options = {
         }
     },
     detectRetina: true
-}
+} as const
 
 // 表单内容
-const ruleForm = reactive({
+const ruleForm = reactive<LoginData>({
     username: '',
     password: ''
 })
-const ruleFormRef = ref
+
+const ruleFormRef = ref<FormInstance | null>(null)
+
 // 密码验证规则
-const validatePwd = (rule, value, callback) => {
+const validatePwd = (rule: any, value: string, callback: (error?: Error) => void) => {
     if (!value) {
         return callback(new Error('请输入密码'))
     } else {
         callback()
     }
 }
-const rules = reactive({
+
+const rules = reactive<FormRules<LoginData>>({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [{ required: true, validator: validatePwd, trigger: 'blur' }],
 })
+
 // 提交登录的表单验证
-const login = (formEl) => {
+const login = async (formEl: FormInstance | undefined) => {
     if (!formEl) return
-    formEl.validate((valid) => {
+    formEl.validate(async (valid) => {
         if (valid) {
-            // console.log('submit!')
-            axios.post('/adminapi/user/login', ruleForm).then(res => {
-                // console.log(res.data);
-                // 登陆成功的处理
-                if (res.data.ActionType === 'OK') {
-                    // console.log(res.data.data);
-                    userInfo.changeUserInfo(res.data.data)
-                    // console.log(useMenu.isGetterRouter);
-                    useMenu.changeGetterRouter(false)
-                    router.push('/home')
-                } else {
-                    // 登录失败的处理
-                    ElMessage.error(res.data.error)
-                }
-            })
+            const res = await loginApi(ruleForm)
+            // 登陆成功的处理
+            if (res.ActionType === 'OK') {
+                userInfo.changeUserInfo(res.data)
+                useMenu.changeGetterRouter(false)
+                router.push('/home')
+            } else {
+                // 登录失败的处理
+                ElMessage.error(res.error || '登录失败')
+            }
         } else {
             console.log('error submit!')
             return false
@@ -165,7 +167,6 @@ const login = (formEl) => {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, .3);
-    // filter: blur(10px);
 
     h2 {
         padding: 10px 0;
@@ -174,10 +175,6 @@ const login = (formEl) => {
     }
 
     .el-form {
-        // position: absolute;
-        // filter: blur(10px);
-
-
         .el-form-item {
             margin: 50px 20px;
         }

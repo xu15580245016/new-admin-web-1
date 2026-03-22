@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "npx vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "npx vue-tsc --noEmit"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
@@ -24,8 +25,11 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/tsconfig": "^0.9.0",
+    "typescript": "^5.9.3",
     "unplugin-auto-import": "^0.14.3",
     "unplugin-vue-components": "^0.24.0",
-    "vite": "^4.1.0"
+    "vite": "^4.1.0",
+    "vue-tsc": "^3.2.6"
   }
 }
