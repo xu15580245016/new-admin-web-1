@@ -28,10 +28,9 @@
 </template>
 
 <script setup>
-import { reactive, ref, toRefs, onMounted } from 'vue'
-import axios from 'axios';
-import { computed } from 'vue';
-import { userInfoStore } from '../../store/userInfo';
+import { ref, onMounted, computed } from 'vue'
+import { userInfoStore } from '../../store/userInfo'
+import { getProductList } from '../../api/product'
 
 const userInfo = userInfoStore()
 const loopList = ref([])
@@ -39,15 +38,12 @@ const loopList = ref([])
 const avatarUrl = computed(() => userInfo.userInfo.avatar ? 'http://localhost:3000' + userInfo.userInfo.avatar : `https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png`)
 
 onMounted(() => {
-    // 函数体
     getTableDate()
 })
 
 const getTableDate = async () => {
-    // 函数体
-    const res = await axios.get('/adminapi/product/list')
-    // console.log(res.data);
-    loopList.value = res.data.data
+    const res = await getProductList()
+    loopList.value = res.data
 }
 </script>
 

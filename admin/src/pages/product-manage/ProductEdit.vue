@@ -23,19 +23,19 @@
 </template>
 
 <script setup>
-
 import { reactive, ref, onMounted } from 'vue'
 import UploadAvatar from '../../components/UploadAvatar/UploadAvatar.vue';
-import upload from '../../util/upload';
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios';
+import { getProductDetail, updateProduct } from '../../api/product'
+
 const productFormRef = ref()
 const productForm = reactive({
     title: '',
     introduction: '',
     detail: '',
     cover: '',
-    file: null
+    file: null,
+    _id: ''
 })
 
 const productFormRules = reactive({
@@ -52,38 +52,31 @@ const productFormRules = reactive({
     introduction: [
         { required: true, message: '请输入简要描述', trigger: 'blur' },
     ]
-
 })
 
 const handleChange = file => {
-    // 函数体
     productForm.cover = URL.createObjectURL(file)
     productForm.file = file
 }
+
 const router = useRouter()
 const submitForm = () => {
-    // 函数体
     productFormRef.value.validate(async (valid) => {
-        // 函数体
         if (valid) {
-            // console.log(productForm);
-            await upload("/adminapi/product/list", productForm)
+            await updateProduct(productForm)
             router.push('/product-manage/productlist')
         }
     })
 }
 
 onMounted(() => {
-    // 函数体
     getData()
 })
 
 const route = useRoute()
 const getData = async () => {
-    // 函数体
-    const res = await axios.get(`/adminapi/product/list/${route.params.id}`)
-    // console.log(res.data.data[0]);
-    Object.assign(productForm, res.data.data[0])
+    const res = await getProductDetail(route.params.id)
+    Object.assign(productForm, res.data[0])
 }
 </script>
 
@@ -91,4 +84,4 @@ const getData = async () => {
 .el-form {
     margin-top: 30px;
 }
-</style>  
+</style>
